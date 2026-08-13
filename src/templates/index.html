@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M-BIST SHMOO ML Optimization System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent-blue: #38bdf8;
+      --accent-purple: #a855f7;
+      --accent-green: #22c55e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(15, 23, 42, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Drop Zone */
+    .upload-zone {
+      border: 2px dashed rgba(56, 189, 248, 0.4);
+      border-radius: 12px;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+      color: var(--accent-blue);
+    }
+
+    .upload-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .upload-sub {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    input[type="file"] { display: none; }
+
+    /* Results Dashboard */
+    .dashboard {
+      display: none;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .metric-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .metric-sub {
+      font-size: 0.8rem;
+      color: var(--accent-green);
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1.2rem;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+    }
+
+    .mode-selector {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .radio-label:has(input:checked) {
+      color: var(--text-main);
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent-blue);
+    }
+
+    .btn-generate {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: white;
+      border: none;
+      padding: 0.75rem 1.6rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+    }
+
+    .btn-generate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+    }
+
+    /* Plot Container */
+    .plot-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 0.5rem;
+      border: 1px solid var(--glass-border);
+      min-height: 480px;
+    }
+
+    .plot-img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* Loading Spinner */
+    .loader {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 5px solid rgba(255, 255, 255, 0.1);
+      border-bottom-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>M-BIST SHMOO ML Optimization System</h1>
+      <p>Automated Local Boundary Prediction, Guardband Optimization & Executive PDF Reporting</p>
+    </header>
+
+    <div class="glass-card" id="upload-card">
+      <div class="upload-zone" id="drop-zone">
+        <div class="upload-icon">📊</div>
+        <div class="upload-title">Drop M-BIST Dataset Here or Click to Upload</div>
+        <div class="upload-sub">Supports CSV and Excel files (.csv, .xlsx) containing VDD, Frequency, & Test Results</div>
+        <input type="file" id="file-input" accept=".csv, .xlsx, .xls">
+      </div>
+
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <div id="loader-text">Training Model & Extracting RANSAC Boundary...</div>
+      </div>
+    </div>
+
+    <div class="dashboard" id="dashboard">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Cross-Val Accuracy</div>
+          <div class="metric-value" id="m-acc">--</div>
+          <div class="metric-sub">5-Fold Stratified CV</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Recommended VDD</div>
+          <div class="metric-value" id="m-vdd">--</div>
+          <div class="metric-sub" id="m-vmargin">Voltage Margin</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Recommended Freq</div>
+          <div class="metric-value" id="m-freq">--</div>
+          <div class="metric-sub" id="m-fmargin">Freq Margin</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Boundary R² Fit</div>
+          <div class="metric-value" id="m-r2">--</div>
+          <div class="metric-sub" id="m-slope">Linear Model</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="plot-container">
+          <img id="shmoo-plot-img" class="plot-img" alt="SHMOO Characterization Plot">
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <div class="mode-selector">
+          <span style="font-size: 0.9rem; font-weight: 500;">Report Narrative Engine:</span>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="text-mode" value="template" checked>
+              <span>Option B: Template Engine (Instant)</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="text-mode" value="llm">
+              <span>Option A: Local LLM (Phi-3 Mini)</span>
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate" id="btn-report">📄 Download Executive Report (PDF)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const loader = document.getElementById('loader');
+    const uploadCard = document.getElementById('upload-card');
+    const dashboard = document.getElementById('dashboard');
+
+    let currentSessionId = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        handleUpload(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleUpload(e.target.files[0]);
+      }
+    });
+
+    async function handleUpload(file) {
+      dropZone.style.display = 'none';
+      loader.style.display = 'flex';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+        currentSessionId = data.session_id;
+        renderDashboard(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+        dropZone.style.display = 'block';
+        loader.style.display = 'none';
+      }
+    }
+
+    function renderDashboard(data) {
+      uploadCard.style.display = 'none';
+      dashboard.style.display = 'flex';
+      
+      const r = data.results;
+      document.getElementById('m-acc').textContent = (r.cv_accuracy * 100).toFixed(1) + '%';
+      document.getElementById('m-vdd').textContent = r.recommended_vdd.toFixed(3) + ' V';
+      document.getElementById('m-vmargin').textContent = '+' + (r.voltage_margin_v * 1000).toFixed(0) + ' mV Margin';
+      document.getElementById('m-freq').textContent = r.recommended_freq.toFixed(3) + ' GHz';
+      document.getElementById('m-fmargin').textContent = '+' + (r.freq_margin_ghz * 1000).toFixed(0) + ' MHz Margin';
+      document.getElementById('m-r2').textContent = r.boundary_r2.toFixed(3);
+      document.getElementById('m-slope').textContent = 'Slope: ' + r.boundary_slope.toFixed(2) + ' GHz/V';
+
+      // Load static image URL with cache-busting timestamp
+      const img = document.getElementById('shmoo-plot-img');
+      img.src = data.plot_url + '?t=' + new Date().getTime();
+    }
+
+    document.getElementById('btn-report').addEventListener('click', async () => {
+      if (!currentSessionId) return;
+
+      const mode = document.querySelector('input[name="text-mode"]:checked').value;
+      const btn = document.getElementById('btn-report');
+      const originalText = btn.textContent;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Generating PDF Report...';
+
+      try {
+        const res = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: currentSessionId,
+            text_mode: mode
+          })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Report generation failed');
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SHMOO_Executive_Report_${currentSessionId.substring(0, 8)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        alert('Report Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+  </script>
+</body>
+</html>
