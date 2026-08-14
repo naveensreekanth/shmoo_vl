@@ -1,8 +1,9 @@
 """
 ShmooPreprocessor
 -----------------
-Loads CSV / Excel, validates required columns, normalizes string formatting,
-auto-detects single vs. multi-die datasets, and engineers features for the ML model.
+Loads CSV / Excel, normalizes column names & string formatting, auto-derives
+missing Pass/Fail status from failure codes/margins, auto-detects single vs.
+multi-die datasets, and engineers features for the ML model.
 
 Time complexity : O(N)  for all operations (N = number of rows)
 Space complexity: O(N)  – one copy of the dataframe with extra columns
@@ -12,13 +13,20 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-# ── Column contracts ──────────────────────────────────────────────────────────
-REQUIRED_COLS = {'Point_ID', 'VDD_V', 'Frequency_GHz', 'Test_Result', 'Failure_Code'}
+# Alias mapping for flexible schema ingestion
+COLUMN_ALIASES = {
+    'VDD_V': ['VDD_V', 'VDD', 'V', 'VDD(V)', 'VDD_VOLT', 'VOLTAGE'],
+    'Frequency_GHz': ['FREQUENCY_GHZ', 'FREQUENCY', 'FREQ_GHZ', 'FREQ', 'FREQ(GHZ)', 'F_GHZ'],
+    'Test_Result': ['TEST_RESULT', 'TEST_RESULTS', 'RESULT', 'PASS_FAIL', 'STATUS', 'TEST_STATUS', 'OUTCOME'],
+    'Failure_Code': ['FAILURE_CODE', 'FAIL_CODE', 'FAILURECODE', 'FAILURE', 'ERROR_CODE', 'FAIL_TYPE'],
+    'Point_ID': ['POINT_ID', 'POINTID', 'ID', 'POINT', 'INDEX'],
+}
+
 OPTIONAL_COLS = {
     'Lot_ID', 'Wafer_ID', 'Die_ID', 'Temperature_C',
     'Current_mA', 'Timing_ns', 'Leakage_mA',
     'Test_Time_ms', 'Pattern_ID', 'Test_ID', 'Margin_GHz',
-    'March_Algorithm', 'Memory_Instance', 'Memory_Address',  # M-BIST columns
+    'March_Algorithm', 'Memory_Instance', 'Memory_Address',
 }
 DIE_ID_COLS = ['Lot_ID', 'Wafer_ID', 'Die_ID']
 
@@ -31,7 +39,7 @@ class ShmooPreprocessor:
         self.df_processed: pd.DataFrame | None = None
 
     def load(self, filepath: str) -> dict:
-        """Load file, validate schema, return metadata dict."""
+        """Load file, normalize schema, return metadata dict."""
         path = Path(filepath)
         suffix = path.suffix.lower()
 
@@ -42,7 +50,8 @@ class ShmooPreprocessor:
         else:
             raise ValueError(f"Unsupported file format: '{suffix}'. Use CSV or Excel.")
 
-        self._validate_columns(df)
+        df = self._normalize_columns(df)
+        self._validate_and_derive_columns(df)
         self.df_raw = df
         return self._detect_structure(df)
 
@@ -53,11 +62,7 @@ class ShmooPreprocessor:
 
         df = self.df_raw.copy()
 
-        # ── Robust String Normalization ───────────────────────────────────────
-        df['Test_Result']  = df['Test_Result'].astype(str).str.strip().str.upper()
-        df['Failure_Code'] = df['Failure_Code'].fillna('NA').astype(str).str.strip().str.upper()
-        df['Failure_Code'] = df['Failure_Code'].replace({'NAN': 'NA', 'NONE': 'NA', '': 'NA', 'NULL': 'NA', 'N/A': 'NA'})
-
+        # ── Target label ──────────────────────────────────────────────────────
         pass_mask = df['Test_Result'].isin(['PASS', 'PASSED', '1', 'TRUE', 'P'])
         df['Test_Result'] = np.where(pass_mask, 'PASS', 'FAIL')
         df['label']       = pass_mask.astype(int)
@@ -98,13 +103,69 @@ class ShmooPreprocessor:
         self.df_processed = df
         return df
 
-    def _validate_columns(self, df: pd.DataFrame) -> None:
-        missing = REQUIRED_COLS - set(df.columns)
-        if missing:
+    def _normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Map case-insensitive column aliases to standard internal names."""
+        column_map = {}
+        upper_to_original = {col.upper(): col for col in df.columns}
+
+        for target_name, aliases in COLUMN_ALIASES.items():
+            for alias in aliases:
+                if alias.upper() in upper_to_original:
+                    column_map[upper_to_original[alias.upper()]] = target_name
+                    break
+
+        return df.rename(columns=column_map)
+
+    def _validate_and_derive_columns(self, df: pd.DataFrame) -> None:
+        """Check essential columns and smart-derive missing values if possible."""
+        # 1. Check mandatory geometric axes
+        missing_axes = []
+        if 'VDD_V' not in df.columns:
+            missing_axes.append('VDD_V (Voltage)')
+        if 'Frequency_GHz' not in df.columns:
+            missing_axes.append('Frequency_GHz (Frequency)')
+
+        if missing_axes:
             raise ValueError(
-                f"Missing required columns: {sorted(missing)}\n"
-                f"Found columns: {list(df.columns)}"
+                f"Missing mandatory Shmoo axes: {missing_axes}.\n"
+                f"Found columns in file: {list(df.columns)}"
             )
+
+        # Ensure numeric values for VDD and Frequency
+        df['VDD_V'] = pd.to_numeric(df['VDD_V'], errors='coerce')
+        df['Frequency_GHz'] = pd.to_numeric(df['Frequency_GHz'], errors='coerce')
+
+        # 2. Auto-generate Point_ID if missing
+        if 'Point_ID' not in df.columns:
+            df['Point_ID'] = np.arange(1, len(df) + 1)
+
+        # 3. Clean Failure_Code if present
+        if 'Failure_Code' in df.columns:
+            df['Failure_Code'] = df['Failure_Code'].fillna('NA').astype(str).str.strip().str.upper()
+            df['Failure_Code'] = df['Failure_Code'].replace({'NAN': 'NA', 'NONE': 'NA', '': 'NA', 'NULL': 'NA', 'N/A': 'NA'})
+        else:
+            df['Failure_Code'] = 'NA'
+
+        # 4. Derive or clean Test_Result
+        if 'Test_Result' in df.columns:
+            df['Test_Result'] = df['Test_Result'].astype(str).str.strip().str.upper()
+        else:
+            # Smart-derive Test_Result from Failure_Code or Margin_GHz if Test_Result column is omitted
+            if 'Failure_Code' in df.columns:
+                is_pass = df['Failure_Code'].isin(['NA', 'NONE', '', 'NAN', '0', 'PASS', 'PASSED'])
+                df['Test_Result'] = np.where(is_pass, 'PASS', 'FAIL')
+            elif 'Margin_GHz' in df.columns:
+                df['Test_Result'] = np.where(pd.to_numeric(df['Margin_GHz'], errors='coerce') >= 0, 'PASS', 'FAIL')
+            else:
+                raise ValueError(
+                    "Missing 'Test_Result' column in dataset.\n"
+                    "Please include a 'Test_Result' column (PASS/FAIL) or a 'Failure_Code' column."
+                )
+
+        # If Failure_Code was originally missing, set default code for FAIL rows
+        if 'Failure_Code' not in df.columns or (df['Failure_Code'] == 'NA').all():
+            fail_mask = df['Test_Result'] == 'FAIL'
+            df['Failure_Code'] = np.where(fail_mask, 'FREQ_MARGIN', 'NA')
 
     def _detect_structure(self, df: pd.DataFrame) -> dict:
         """Auto-detect single vs. multi-die and build metadata."""
