@@ -3,8 +3,8 @@ ReportGenerator
 ---------------
 Generates high-quality PDF reports using ReportLab.
 Features executive summary, methodology, embedded high-res Shmoo plot,
-numerical metrics table, yield-by-voltage table, failure breakdown, and recommendations.
-Updated to support Scan and M-BIST memory defect characterization.
+numerical metrics table, yield-by-voltage table, multi-device ranking table,
+failure breakdown, and recommendations.
 """
 
 from reportlab.lib.pagesizes import A4
@@ -58,7 +58,7 @@ class ReportGenerator:
         story.append(Paragraph('<i>Die-Level VDD/Frequency Characterization — Binning & Screening Recommendation</i>', S['subtitle']))
         
         # Metadata Bar
-        meta_text = f"Source: {meta.get('lot_id', 'Lot_A001')}, Wafer {meta.get('wafer_id', 'W001')}, Die {meta.get('die_id', 'D0001')}  |  Prepared: {datetime.now().strftime('%B %d, %Y')}  |  Pass Rate: {meta.get('pass_rate', 0)*100:.1f}%"
+        meta_text = f"Source: {meta.get('lot_id', 'Lot_A001')}, Wafer {meta.get('wafer_id', 'W001')}, Devices: {meta.get('n_dies', 1)}  |  Prepared: {datetime.now().strftime('%B %d, %Y')}  |  Pass Rate: {meta.get('pass_rate', 0)*100:.1f}%"
         story.append(Paragraph(meta_text, S['caption']))
         story.append(Spacer(1, 6))
         story.append(HRFlowable(width='100%', thickness=1.5, color=DARK_BLUE))
@@ -104,6 +104,12 @@ class ReportGenerator:
         story.append(self._yield_table(results, S, W))
         story.append(Spacer(1, 8))
 
+        # 4.2 Multi-Device Performance Ranking (If dataset has multiple devices)
+        if getattr(results, 'is_multi_die', False) and getattr(results, 'die_rankings', None):
+            story.append(Paragraph('4.2 Multi-Device Binning Performance Ranking', S['h2']))
+            story.append(self._multi_die_table(results, S, W))
+            story.append(Spacer(1, 8))
+
         # 5. Failure Mode Analysis
         story.append(Paragraph('5. Failure Mode Analysis', S['h1']))
         story.append(self._failure_table(results, S, W))
@@ -117,12 +123,24 @@ class ReportGenerator:
 
         # 6. Screening Recommendations
         story.append(Paragraph('6. Production Binning & Guardband Recommendation', S['h1']))
-        story.append(Paragraph(
+        rec_text = (
             f"<b>Primary Operating Point:</b> Set VDD ≥ {results.recommended_vdd:.3f} V and Frequency ≤ {results.recommended_freq:.3f} GHz. "
             f"This provides a voltage margin of {results.voltage_margin_v*1000:.0f} mV and a frequency margin of {results.freq_margin_ghz*1000:.0f} MHz. "
-            f"<b>Screening Strategy:</b> Employ a two-tier screening process: (1) Standard VDD/Freq sweep for FREQ_MARGIN fails, "
-            f"and (2) Targeted screening for critical functional/hard defects.", S['body']
-        ))
+        )
+        if getattr(results, 'is_multi_die', False) and getattr(results, 'low_performer', None):
+            high = results.high_performer
+            low = results.low_performer
+            rec_text += (
+                f"<b>Multi-Device Strategy:</b> High Performer device <b>{high['die_id']}</b> achieves Fmax of {high['fmax_at_nom']:.2f} GHz. "
+                f"Population overall recommendation is bounded by Low Performer device <b>{low['die_id']}</b> (Fmax of {low['fmax_at_nom']:.2f} GHz) "
+                f"to guarantee 100% binning yield across all devices."
+            )
+        else:
+            rec_text += (
+                f"<b>Screening Strategy:</b> Employ a two-tier screening process: (1) Standard VDD/Freq sweep for FREQ_MARGIN fails, "
+                f"and (2) Targeted screening for critical functional/hard defects."
+            )
+        story.append(Paragraph(rec_text, S['body']))
         story.append(Spacer(1, 10))
 
         doc.build(story, onFirstPage=self._header_footer, onLaterPages=self._header_footer)
@@ -167,6 +185,42 @@ class ReportGenerator:
             ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, LIGHT_GREY]),
             ('GRID', (0,0), (-1,-1), 0.4, BORDER),
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('PADDING', (0,0), (-1,-1), 3),
+        ]))
+        return tbl
+
+    def _multi_die_table(self, results, S, W):
+        data = [['Device ID', 'Performance Category', 'Fmax @ Nom VDD', 'Yield (%)', 'Rec. Freq (GHz)']]
+        rankings = getattr(results, 'die_rankings', [])
+        high = getattr(results, 'high_performer', None)
+        low = getattr(results, 'low_performer', None)
+
+        for d in rankings:
+            die_id = d['die_id']
+            if high and die_id == high['die_id']:
+                cat = 'High Performer (Fastest)'
+            elif low and die_id == low['die_id']:
+                cat = 'Low Performer (Corner)'
+            else:
+                cat = 'Nominal Device'
+
+            data.append([
+                die_id,
+                cat,
+                f"{d['fmax_at_nom']:.2f} GHz",
+                f"{d['pass_rate']*100:.1f}%",
+                f"{d['recommended_freq']:.2f} GHz"
+            ])
+
+        tbl = Table(data, colWidths=[W*0.18, W*0.34, W*0.18, W*0.14, W*0.16])
+        tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), DARK_BLUE),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, LIGHT_GREY]),
+            ('GRID', (0,0), (-1,-1), 0.4, BORDER),
+            ('ALIGN', (1,0), (-1,-1), 'CENTER'),
             ('PADDING', (0,0), (-1,-1), 3),
         ]))
         return tbl

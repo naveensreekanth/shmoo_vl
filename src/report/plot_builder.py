@@ -5,6 +5,7 @@ plot_builder.py
 Zero external CDN or internet dependencies.
 Generates crisp, high-resolution dark-theme plot images for the Web UI and
 light-theme plot images for the PDF report.
+Supports single-die scatter + boundary and multi-device (D0001 - D0010) boundary overlay.
 """
 
 import io
@@ -70,7 +71,7 @@ def build_shmoo_plot(
         pass_df = df[pass_mask]
         ax.scatter(
             pass_df['VDD_V'], pass_df['Frequency_GHz'],
-            c=COLOURS['PASS'], s=28, marker='s', alpha=0.85,
+            c=COLOURS['PASS'], s=24, marker='s', alpha=0.75,
             label='PASS', zorder=3
         )
 
@@ -83,7 +84,7 @@ def build_shmoo_plot(
             color = COLOURS.get(code, '#e74c3c')
             ax.scatter(
                 sub['VDD_V'], sub['Frequency_GHz'],
-                c=color, s=28, marker='s', alpha=0.85,
+                c=color, s=24, marker='s', alpha=0.75,
                 label=f'FAIL ({code})', zorder=3
             )
 
@@ -100,8 +101,22 @@ def build_shmoo_plot(
     ax.plot(
         vdd_lin, bnd_freq,
         color=line_color, linestyle='--', linewidth=2.5,
-        label=f'Predicted Boundary (R²={results.boundary_r2:.3f})', zorder=4
+        label=f'Population Boundary (R²={results.boundary_r2:.3f})', zorder=4
     )
+
+    # ── Multi-Device Boundary Overlay ─────────────────────────────────────────
+    if getattr(results, 'is_multi_die', False) and getattr(results, 'die_results', None):
+        multi_colors = ['#e17055', '#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#e84393', '#00cec9', '#d63031', '#a29bfe', '#ffeaa7']
+        for idx, (die_id, d_info) in enumerate(results.die_results.items()):
+            d_slope = d_info['slope']
+            d_intercept = d_info['intercept']
+            d_freq = d_slope * vdd_lin + d_intercept
+            c = multi_colors[idx % len(multi_colors)]
+            ax.plot(
+                vdd_lin, d_freq,
+                color=c, linestyle=':', linewidth=1.5, alpha=0.85,
+                label=f'Device {die_id} ({d_info["fmax_at_nom"]:.2f} GHz)', zorder=3.5
+            )
 
     # ── Recommended Operating Point ───────────────────────────────────────────
     ax.scatter(
@@ -115,7 +130,8 @@ def build_shmoo_plot(
     ax.axvline(results.recommended_vdd, color=star_color, linestyle=':', linewidth=1.2, alpha=0.8)
 
     # ── Labels & Formatting ───────────────────────────────────────────────────
-    ax.set_title('SHMOO Characterization Plot — VDD vs Frequency', color=text_color, fontsize=13, fontweight='bold', pad=12)
+    title = 'Multi-Device SHMOO Characterization Plot' if getattr(results, 'is_multi_die', False) else 'SHMOO Characterization Plot — VDD vs Frequency'
+    ax.set_title(title, color=text_color, fontsize=13, fontweight='bold', pad=12)
     ax.set_xlabel('VDD (V)', color=muted_color, fontsize=10, fontweight='bold')
     ax.set_ylabel('Frequency (GHz)', color=muted_color, fontsize=10, fontweight='bold')
 
@@ -130,7 +146,7 @@ def build_shmoo_plot(
 
     legend = ax.legend(
         loc='upper left', frameon=True,
-        facecolor=card_bg, edgecolor=grid_color, fontsize=9
+        facecolor=card_bg, edgecolor=grid_color, fontsize=8
     )
     for text in legend.get_texts():
         text.set_color(text_color)

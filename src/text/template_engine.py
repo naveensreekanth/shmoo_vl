@@ -2,6 +2,7 @@
 TemplateEngine (Option B) — lightweight, no LLM required.
 Selects a pre-written narrative template based on result metrics and fills
 in the actual numbers. Near-instant, zero extra RAM.
+Updated to append Multi-Device performance ranking notes when present.
 """
 
 
@@ -102,7 +103,7 @@ class TemplateEngine:
         freq_margin_count = fail_codes.get('FREQ_MARGIN', 0)
         timing_count      = fail_codes.get('TIMING', 0)
 
-        return template.format(
+        narrative = template.format(
             n_total=n_total,
             n_pass=results.n_pass,
             n_fail=n_fail,
@@ -126,3 +127,17 @@ class TemplateEngine:
             timing_count=timing_count,
             timing_pct=timing_count / n_fail * 100 if n_fail else 0,
         )
+
+        if getattr(results, 'is_multi_die', False) and getattr(results, 'high_performer', None):
+            high = results.high_performer
+            low = results.low_performer
+            rankings = results.die_rankings
+            multi_note = (
+                f"\n\nMulti-Device Analysis ({len(rankings)} devices evaluated):\n"
+                f"- High Performer: Device '{high['die_id']}' achieved the highest maximum frequency of {high['fmax_at_nom']:.2f} GHz at nominal VDD (yield {high['pass_rate']*100:.1f}%).\n"
+                f"- Low Performer: Device '{low['die_id']}' represents the speed-limiting corner with Fmax of {low['fmax_at_nom']:.2f} GHz at nominal VDD (yield {low['pass_rate']*100:.1f}%).\n"
+                f"The overall population recommendation (Frequency ≤ {results.recommended_freq:.3f} GHz) is bounded by the Low Performer to guarantee 100% binning yield across all devices."
+            )
+            narrative += multi_note
+
+        return narrative

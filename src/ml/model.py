@@ -2,7 +2,8 @@
 ShmooModel
 ----------
 LightGBM binary classifier + RANSAC linear boundary extractor.
-Updated to support generalized functional fault detection for Scan & M-BIST data.
+Supports single-die and multi-device (D0001 - D0010) boundary extraction,
+performance ranking, high/low performer identification, and worst-case population guardbanding.
 """
 
 import numpy as np
@@ -57,6 +58,12 @@ class ShmooResults:
     predictions:              np.ndarray
     probabilities:            np.ndarray
     classification_report:    str
+    # Multi-die additions
+    is_multi_die:             bool = False
+    die_results:              Dict[str, dict] = field(default_factory=dict)
+    die_rankings:             List[dict] = field(default_factory=list)
+    high_performer:           Optional[dict] = None
+    low_performer:            Optional[dict] = None
     # kept for plot overlay
     ransac: object = field(default=None, repr=False)
 
@@ -72,7 +79,7 @@ class ShmooModel:
     def train_and_evaluate(self, df: pd.DataFrame,
                            progress_cb=None) -> ShmooResults:
         """
-        Full pipeline: feature selection → LightGBM CV + fit → RANSAC boundary.
+        Full pipeline: feature selection → LightGBM CV + fit → RANSAC boundary → Multi-Die Ranking.
         progress_cb: optional callable(step: int, total: int, msg: str)
         """
         self.feature_cols = self._get_features(df)
@@ -129,18 +136,88 @@ class ShmooModel:
         ss_tot    = float(np.sum((fmax_pts - fmax_pts.mean()) ** 2))
         r2        = 1.0 - ss_res / ss_tot if ss_tot > 0 else 1.0
 
-        # ── Step 4: Metrics & operating point ────────────────────────────────
+        # ── Step 4: Metrics, multi-die ranking & operating point ───────────────
         if progress_cb:
-            progress_cb(4, total_steps, "Computing margins & recommended OP…")
+            progress_cb(4, total_steps, "Computing margins, multi-device ranking & recommended OP…")
 
         vdd_vals = np.sort(df['VDD_V'].unique())
         rec_vdd  = float(np.percentile(vdd_vals, 55))
         rec_freq = float(self.ransac.predict([[rec_vdd]])[0]) * 0.90   # 10% guardband
 
-        min_pass_vdd      = float(df[df['label'] == 1]['VDD_V'].min())
-        v_margin          = rec_vdd - min_pass_vdd
-        boundary_at_rec   = float(self.ransac.predict([[rec_vdd]])[0])
-        f_margin          = boundary_at_rec - rec_freq
+        # Check multi-device / multi-die presence
+        die_col = None
+        for candidate in ['Die_ID', 'Test_ID', 'Wafer_ID']:
+            if candidate in df.columns and df[candidate].nunique() > 1:
+                die_col = candidate
+                break
+
+        die_results = {}
+        die_rankings = []
+        high_performer = None
+        low_performer = None
+        is_multi_die = False
+
+        if die_col:
+            is_multi_die = True
+            unique_dies = sorted(df[die_col].unique())
+            for die_id in unique_dies:
+                die_df = df[df[die_col] == die_id]
+                if len(die_df) < 5: continue
+                d_boundary = self._extract_boundary(die_df)
+                if not d_boundary: continue
+                d_vdd = np.array(list(d_boundary.keys()), dtype=np.float32).reshape(-1, 1)
+                d_fmax = np.array(list(d_boundary.values()), dtype=np.float32)
+
+                try:
+                    d_ransac = RANSACRegressor(
+                        LinearRegression(),
+                        min_samples=max(0.5, min(0.9, 2.0 / len(d_vdd))),
+                        residual_threshold=0.05,
+                        random_state=42,
+                    )
+                    d_ransac.fit(d_vdd, d_fmax)
+                    d_slope = float(d_ransac.estimator_.coef_[0])
+                    d_intercept = float(d_ransac.estimator_.intercept_)
+                    d_fmax_pred = d_ransac.predict(d_vdd)
+                    d_ss_res = float(np.sum((d_fmax - d_fmax_pred) ** 2))
+                    d_ss_tot = float(np.sum((d_fmax - d_fmax.mean()) ** 2))
+                    d_r2 = 1.0 - d_ss_res / d_ss_tot if d_ss_tot > 0 else 1.0
+                except Exception:
+                    d_slope, d_intercept, d_r2 = slope, intercept, r2
+
+                fmax_at_nom = float(d_slope * rec_vdd + d_intercept)
+                d_rec_freq = float(fmax_at_nom * 0.90)
+                d_pass_rate = float((die_df['label'] == 1).mean())
+
+                die_info = {
+                    'die_id': str(die_id),
+                    'slope': round(d_slope, 4),
+                    'intercept': round(d_intercept, 4),
+                    'r2': round(d_r2, 4),
+                    'fmax_at_nom': round(fmax_at_nom, 3),
+                    'recommended_vdd': round(rec_vdd, 3),
+                    'recommended_freq': round(d_rec_freq, 3),
+                    'pass_rate': round(d_pass_rate, 4),
+                    'n_pass': int((die_df['label'] == 1).sum()),
+                    'n_fail': int((die_df['label'] == 0).sum()),
+                    'boundary': {float(k): float(v) for k, v in d_boundary.items()}
+                }
+                die_results[str(die_id)] = die_info
+                die_rankings.append(die_info)
+
+            if die_rankings:
+                # Rank devices by maximum frequency at nominal VDD in descending order
+                die_rankings.sort(key=lambda x: x['fmax_at_nom'], reverse=True)
+                high_performer = die_rankings[0]
+                low_performer = die_rankings[-1]
+
+                # Population recommendation bounded by Low Performer (100% yield guarantee across all dies)
+                rec_freq = min(rec_freq, low_performer['recommended_freq'])
+
+        min_pass_vdd    = float(df[df['label'] == 1]['VDD_V'].min())
+        v_margin        = rec_vdd - min_pass_vdd
+        boundary_at_rec = float(slope * rec_vdd + intercept)
+        f_margin        = boundary_at_rec - rec_freq
 
         yield_by_vdd = df.groupby('VDD_V')['label'].mean().to_dict()
         fmax_by_vdd  = {
@@ -205,13 +282,18 @@ class ShmooModel:
             yield_by_vdd={float(k): float(v) for k, v in yield_by_vdd.items()},
             fmax_by_vdd=fmax_by_vdd,
             critical_fault_patterns=critical_patterns,
-            timing_fail_patterns=critical_patterns,  # alias for backward compatibility
+            timing_fail_patterns=critical_patterns,
             failure_code_dist=fail_codes,
             n_pass=int((df['label'] == 1).sum()),
             n_fail=int((df['label'] == 0).sum()),
             predictions=preds,
             probabilities=probs,
             classification_report=report,
+            is_multi_die=is_multi_die,
+            die_results=die_results,
+            die_rankings=die_rankings,
+            high_performer=high_performer,
+            low_performer=low_performer,
             ransac=self.ransac,
         )
         return self.results

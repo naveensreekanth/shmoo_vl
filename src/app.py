@@ -169,6 +169,11 @@ def _serialize_results(results) -> dict:
         'failure_code_dist': results.failure_code_dist,
         'critical_fault_patterns': getattr(results, 'critical_fault_patterns', results.timing_fail_patterns),
         'timing_fail_patterns': results.timing_fail_patterns,
+        'is_multi_die': getattr(results, 'is_multi_die', False),
+        'die_rankings': getattr(results, 'die_rankings', []),
+        'high_performer': getattr(results, 'high_performer', None),
+        'low_performer': getattr(results, 'low_performer', None),
+        'die_results': getattr(results, 'die_results', {}),
     }
 
 
