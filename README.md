@@ -1,7 +1,7 @@
-# M-BIST SHMOO ML Optimization System
+# SHMOO ML Optimization System
 # Shmoo_VL
 
-An automated, local Machine Learning system for semiconductor **M-BIST** (Memory Built-In Self-Test) and **ATPG Scan** Shmoo plot characterization, Fmax pass/fail boundary extraction, guardband optimization, and executive PDF report generation.
+An automated, local Machine Learning system for semiconductor Shmoo plot characterization, arbitrary multi-device ($1 \dots N$) performance ranking, Fmax pass/fail boundary extraction, guardband optimization, and executive PDF report generation.
 
 ---
 
@@ -10,14 +10,10 @@ An automated, local Machine Learning system for semiconductor **M-BIST** (Memory
 - **100% Offline & Local**: Fully self-contained pipeline; zero cloud services or external API dependencies.
 - **Machine Learning Classification**: LightGBM / Gradient Boosting classifier achieving $\ge 95\%$ cross-validated accuracy on tabular VDD vs Frequency test points.
 - **RANSAC Boundary Extraction**: Robust linear regression extracting the physical $F_{\text{max}}(\text{GHz}) = a \cdot \text{VDD} + b$ boundary with guardband calculations.
-- **Universal Schema Support**: Works seamlessly on both:
-  - **ATPG Scan Datasets** (with `Pattern_ID` and timing failures).
-  - **M-BIST Memory Datasets** (with `March_Algorithm`, `Memory_Instance`, and hard defects like `STUCK_AT`, `COUPLING_FAULT`, `RETENTION_FAULT`, `ADDRESS_DECODE_FAULT`).
-- **Interactive Web Interface**: Modern glassmorphism dark-theme web dashboard with drag-and-drop file upload.
-- **Executive PDF Reports**: Generates professional ReportLab PDF reports containing embedded Shmoo plots, yield tables, failure mode breakdown, and AI recommendations.
-- **Dual Narrative Engines**:
-  - **Option B (Template Engine)**: Near-instant, lightweight rule-based narrative engine.
-  - **Option A (Local LLM)**: Offline GPU/CPU text generation using quantized Phi-3 Mini GGUF via `llama-cpp-python`.
+- **Arbitrary Multi-Device ($1 \dots N$) Analysis**: Automatically fits per-device boundaries, ranks devices from High Performer to Low Performer, and sets overall population guardbands governed by the speed-limiting corner device.
+- **Universal Schema Support**: Works seamlessly across ATPG Scan Datasets, M-BIST Memory Datasets, and general silicon characterization logs.
+- **Interactive Web Dashboard**: Modern glassmorphism dark-theme web interface with drag-and-drop file upload.
+- **Executive PDF Reports**: Generates professional ReportLab PDF reports containing embedded Shmoo plots, yield tables, failure mode breakdown, multi-device ranking tables, and AI recommendations.
 
 ---
 
@@ -31,7 +27,7 @@ shmoo_ml_system/
 ├── models/                         # Local LLM model storage (phi3-mini-q4.gguf)
 ├── uploads/                        # Session file upload cache
 ├── reports/                        # PDF report output directory
-├── shmoo_dataset/                  # Sample Scan and M-BIST datasets
+├── shmoo_dataset/                  # Sample Scan and Memory datasets
 ├── src/
 │   ├── app.py                      # Flask API server & web routes
 │   ├── data/
@@ -75,7 +71,7 @@ Open your browser and navigate to:
 
 ### 3. Workflow
 1. **Upload Dataset**: Drag & drop any `.csv` or `.xlsx` Shmoo dataset (e.g. from `shmoo_dataset/`).
-2. **View Analysis**: Inspect the cross-validation score, recommended operating point ($VDD_{\text{rec}}, F_{\text{rec}}$), guardbands, and interactive Shmoo plot.
+2. **View Analysis**: Inspect the cross-validation score, recommended operating point ($VDD_{\text{rec}}, F_{\text{rec}}$), guardbands, multi-device ranking, and interactive Shmoo plot.
 3. **Generate Report**: Choose between **Option B (Template)** or **Option A (Local LLM)** narrative mode, and click **Download Executive Report (PDF)**.
 
 ---
@@ -98,4 +94,4 @@ The input dataset should contain the following core columns:
 
 ## 📄 License
 
-MIT License. Developed for M-BIST & Semiconductor Testing Optimization.
+MIT License. Developed for Semiconductor Testing Optimization.

@@ -46,7 +46,7 @@ class ReportGenerator:
             output_path, pagesize=A4,
             leftMargin=1.8*cm, rightMargin=1.8*cm,
             topMargin=2.0*cm, bottomMargin=2.0*cm,
-            title='SHMOO Analysis Report', author='M-BIST Shmoo ML System'
+            title='SHMOO Analysis Report', author='Shmoo ML System'
         )
 
         S = _styles()
@@ -291,6 +291,6 @@ class ReportGenerator:
         canvas.rect(0, 0, W, 0.8*cm, fill=1, stroke=0)
         canvas.setFillColor(colors.grey)
         canvas.setFont('Helvetica', 7.5)
-        canvas.drawString(1.8*cm, 0.3*cm, 'Generated locally by M-BIST Shmoo ML System')
+        canvas.drawString(1.8*cm, 0.3*cm, 'Generated locally by Shmoo ML System')
         canvas.drawRightString(W-1.8*cm, 0.3*cm, f'Page {doc.page}')
         canvas.restoreState()
