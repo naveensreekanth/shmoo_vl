@@ -17,6 +17,7 @@
       --accent-purple: #a855f7;
       --accent-green: #22c55e;
       --accent-red: #ef4444;
+      --accent-orange: #f59e0b;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --card-bg: rgba(15, 23, 42, 0.6);
@@ -147,7 +148,7 @@
       color: var(--accent-green);
     }
 
-    /* Multi-Device Cards */
+    /* Multi-Device Cards Above Graph */
     .multi-device-section {
       display: none;
       flex-direction: column;
@@ -202,6 +203,8 @@
 
     .table-container {
       overflow-x: auto;
+      max-height: 240px;
+      overflow-y: auto;
       border-radius: 12px;
       border: 1px solid var(--glass-border);
     }
@@ -214,10 +217,13 @@
     }
 
     .ranking-table th {
-      background: rgba(15, 23, 42, 0.8);
+      position: sticky;
+      top: 0;
+      background: #1e293b;
       color: var(--accent-blue);
       padding: 0.8rem 1rem;
       font-weight: 600;
+      z-index: 2;
     }
 
     .ranking-table td {
@@ -236,6 +242,111 @@
     .badge-high { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
     .badge-low { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
     .badge-nom { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+
+    /* Graph Toolbar & Controls */
+    .plot-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-select {
+      background: #0f172a;
+      color: var(--text-main);
+      border: 1px solid var(--glass-border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .plot-legend-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    /* Plot Canvas Container */
+    .plot-wrapper {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      background: #0f172a;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      overflow: hidden;
+    }
+
+    #shmoo-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Floating Tooltip */
+    .chart-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      color: var(--text-main);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 10;
+      transform: translate(12px, 12px);
+      white-space: nowrap;
+    }
+
+    .tooltip-header {
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 0.2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 0.2rem;
+    }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .tooltip-label { color: var(--text-muted); }
+    .tooltip-val { font-weight: 600; }
 
     /* Controls Bar */
     .controls-bar {
@@ -296,28 +407,6 @@
     .btn-generate:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
-    }
-
-    /* Plot Container */
-    .plot-container {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #0f172a;
-      border-radius: 12px;
-      padding: 0.5rem;
-      border: 1px solid var(--glass-border);
-      min-height: 480px;
-    }
-
-    .plot-img {
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      display: block;
-      object-fit: contain;
     }
 
     /* Loading Spinner */
@@ -389,7 +478,7 @@
         </div>
       </div>
 
-      <!-- Multi-Device Section -->
+      <!-- Multi-Device Section: Positioned Above Graph for Better UX -->
       <div class="glass-card multi-device-section" id="multi-device-card">
         <h3 style="font-size: 1.1rem; color: var(--accent-blue);">Multi-Device Performance Analysis & Binning Ranking</h3>
         <div class="performers-grid">
@@ -421,9 +510,34 @@
         </div>
       </div>
 
+      <!-- Interactive Graph Section -->
       <div class="glass-card">
-        <div class="plot-container">
-          <img id="shmoo-plot-img" class="plot-img" alt="SHMOO Characterization Plot">
+        <div class="plot-toolbar">
+          <div class="filter-group">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">View Mode:</span>
+            <select id="device-filter-select" class="filter-select">
+              <option value="all">Show All Devices (Ensemble)</option>
+              <option value="corners">Show High & Low Corners Only</option>
+            </select>
+          </div>
+          <div class="plot-legend-bar">
+            <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div><span>PASS</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div><span>FAIL (FREQ_MARGIN)</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div><span>FAIL (TIMING/DEFECT)</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#38bdf8;"></div><span>Population Boundary</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div><span>Recommended OP</span></div>
+          </div>
+        </div>
+
+        <div class="plot-wrapper" id="plot-wrapper">
+          <canvas id="shmoo-canvas"></canvas>
+          <div id="chart-tooltip" class="chart-tooltip">
+            <div class="tooltip-header" id="tt-device">Device D0001</div>
+            <div class="tooltip-row"><span class="tooltip-label">Voltage (VDD):</span><span class="tooltip-val" id="tt-vdd">--</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">Frequency:</span><span class="tooltip-val" id="tt-freq">--</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">Result:</span><span class="tooltip-val" id="tt-result">--</span></div>
+            <div class="tooltip-row"><span class="tooltip-label">Failure Code:</span><span class="tooltip-val" id="tt-code">--</span></div>
+          </div>
         </div>
       </div>
 
@@ -453,8 +567,14 @@
     const loader = document.getElementById('loader');
     const uploadCard = document.getElementById('upload-card');
     const dashboard = document.getElementById('dashboard');
+    const canvas = document.getElementById('shmoo-canvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('chart-tooltip');
+    const filterSelect = document.getElementById('device-filter-select');
 
     let currentSessionId = null;
+    let globalPlotData = null;
+    let globalResults = null;
 
     dropZone.addEventListener('click', () => fileInput.click());
 
@@ -496,6 +616,9 @@
         if (!res.ok) throw new Error(data.error || 'Upload failed');
 
         currentSessionId = data.session_id;
+        globalPlotData = data.plot_data;
+        globalResults = data.results;
+
         renderDashboard(data);
       } catch (err) {
         alert('Error: ' + err.message);
@@ -517,8 +640,10 @@
       document.getElementById('m-r2').textContent = r.boundary_r2.toFixed(3);
       document.getElementById('m-slope').textContent = 'Slope: ' + r.boundary_slope.toFixed(2) + ' GHz/V';
 
-      // Handle Multi-Device Section
+      // Setup Multi-Device section & filter options
       const multiCard = document.getElementById('multi-device-card');
+      filterSelect.innerHTML = '<option value="all">Show All Devices (Ensemble)</option><option value="corners">Show High & Low Corners Only</option>';
+
       if (r.is_multi_die && r.die_rankings && r.die_rankings.length > 0) {
         multiCard.style.display = 'flex';
 
@@ -551,16 +676,318 @@
             <td>${d.recommended_freq.toFixed(2)} GHz</td>
           `;
           tbody.appendChild(tr);
+
+          // Populate filter dropdown
+          const opt = document.createElement('option');
+          opt.value = d.die_id;
+          opt.textContent = `Isolate Device: ${d.die_id}`;
+          filterSelect.appendChild(opt);
         });
       } else {
         multiCard.style.display = 'none';
       }
 
-      // Load static image URL with cache-busting timestamp
-      const img = document.getElementById('shmoo-plot-img');
-      img.src = data.plot_url + '?t=' + new Date().getTime();
+      // Draw interactive canvas plot
+      drawInteractivePlot();
     }
 
+    filterSelect.addEventListener('change', () => {
+      drawInteractivePlot();
+    });
+
+    window.addEventListener('resize', () => {
+      if (globalPlotData) drawInteractivePlot();
+    });
+
+    // ── Interactive Canvas Plotting Engine with Tooltips ───────────────────────
+    let spatialPoints = [];
+
+    function drawInteractivePlot() {
+      if (!globalPlotData || !globalResults) return;
+
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const W = rect.width;
+      const H = rect.height;
+      const pad = { top: 30, right: 30, bottom: 45, left: 55 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+
+      // Clear background
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, W, H);
+
+      const vddMin = globalPlotData.vdd_range[0];
+      const vddMax = globalPlotData.vdd_range[1];
+      const freqMin = globalPlotData.freq_range[0];
+      const freqMax = globalPlotData.freq_range[1];
+
+      const vPad = (vddMax - vddMin) * 0.05 || 0.05;
+      const fPad = (freqMax - freqMin) * 0.08 || 0.1;
+      const minX = vddMin - vPad;
+      const maxX = vddMax + vPad;
+      const minY = freqMin - fPad;
+      const maxY = freqMax + fPad;
+
+      const toX = v => pad.left + ((v - minX) / (maxX - minX)) * plotW;
+      const toY = f => pad.top + plotH - ((f - minY) / (maxY - minY)) * plotH;
+
+      // Draw Grid & Axes
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([4, 4]);
+
+      const vSteps = 6;
+      for (let i = 0; i <= vSteps; i++) {
+        const vVal = minX + (i / vSteps) * (maxX - minX);
+        const x = toX(vVal);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + plotH);
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(vVal.toFixed(2) + 'V', x, H - 15);
+      }
+
+      const fSteps = 6;
+      for (let i = 0; i <= fSteps; i++) {
+        const fVal = minY + (i / fSteps) * (maxY - minY);
+        const y = toY(fVal);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(fVal.toFixed(2), pad.left - 8, y + 3);
+      }
+      ctx.setLineDash([]);
+
+      // Axis labels
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Supply Voltage (VDD_V)', pad.left + plotW / 2, H - 2);
+
+      ctx.save();
+      ctx.translate(14, pad.top + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Frequency (GHz)', 0, 0);
+      ctx.restore();
+
+      const filterVal = filterSelect.value;
+      spatialPoints = [];
+
+      // Filter points based on selected view
+      let visiblePoints = globalPlotData.points;
+      if (filterVal === 'corners') {
+        const highId = globalResults.high_performer ? globalResults.high_performer.die_id : null;
+        const lowId = globalResults.low_performer ? globalResults.low_performer.die_id : null;
+        visiblePoints = globalPlotData.points.filter(p => p.die === highId || p.die === lowId);
+      } else if (filterVal !== 'all') {
+        visiblePoints = globalPlotData.points.filter(p => p.die === filterVal);
+      }
+
+      // Draw Scatter Points
+      const pointSize = visiblePoints.length > 500 ? 5 : 7;
+      visiblePoints.forEach(p => {
+        const cx = toX(p.vdd);
+        const cy = toY(p.freq);
+
+        let color = '#22c55e'; // PASS
+        if (p.result !== 'PASS') {
+          if (p.code === 'TIMING' || p.code.includes('FAULT') || p.code.includes('STUCK')) {
+            color = '#f59e0b'; // TIMING / HARD DEFECT
+          } else {
+            color = '#ef4444'; // FREQ_MARGIN
+          }
+        }
+
+        ctx.fillStyle = color;
+        ctx.fillRect(cx - pointSize / 2, cy - pointSize / 2, pointSize, pointSize);
+
+        spatialPoints.push({
+          x: cx, y: cy,
+          vdd: p.vdd, freq: p.freq,
+          result: p.result, code: p.code,
+          die: p.die, pat: p.pat
+        });
+      });
+
+      // Draw Boundary Lines
+      const dieResults = globalResults.die_results || {};
+      const colorsList = ['#e17055', '#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#e84393', '#00cec9', '#d63031'];
+
+      if (filterVal === 'all') {
+        // Draw individual boundary lines subtly
+        let cIdx = 0;
+        for (const [dieId, dInfo] of Object.entries(dieResults)) {
+          ctx.strokeStyle = colorsList[cIdx % colorsList.length];
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          const yStart = toY(dInfo.slope * minX + dInfo.intercept);
+          const yEnd = toY(dInfo.slope * maxX + dInfo.intercept);
+          ctx.moveTo(toX(minX), yStart);
+          ctx.lineTo(toX(maxX), yEnd);
+          ctx.stroke();
+          cIdx++;
+        }
+      } else if (filterVal === 'corners') {
+        // Draw Shaded Process Variation Band between High & Low corners
+        const high = globalResults.high_performer;
+        const low = globalResults.low_performer;
+        if (high && low) {
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+          ctx.beginPath();
+          ctx.moveTo(toX(minX), toY(high.slope * minX + high.intercept));
+          ctx.lineTo(toX(maxX), toY(high.slope * maxX + high.intercept));
+          ctx.lineTo(toX(maxX), toY(low.slope * maxX + low.intercept));
+          ctx.lineTo(toX(minX), toY(low.slope * minX + low.intercept));
+          ctx.closePath();
+          ctx.fill();
+
+          // High boundary line
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 2.0;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(toX(minX), toY(high.slope * minX + high.intercept));
+          ctx.lineTo(toX(maxX), toY(high.slope * maxX + high.intercept));
+          ctx.stroke();
+
+          // Low boundary line
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.moveTo(toX(minX), toY(low.slope * minX + low.intercept));
+          ctx.lineTo(toX(maxX), toY(low.slope * maxX + low.intercept));
+          ctx.stroke();
+        }
+      } else {
+        // Isolate single device boundary
+        const dInfo = dieResults[filterVal];
+        if (dInfo) {
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(toX(minX), toY(dInfo.slope * minX + dInfo.intercept));
+          ctx.lineTo(toX(maxX), toY(dInfo.slope * maxX + dInfo.intercept));
+          ctx.stroke();
+        }
+      }
+
+      // Draw Main Population Boundary Line
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      const popStart = toY(globalResults.boundary_slope * minX + globalResults.boundary_intercept);
+      const popEnd = toY(globalResults.boundary_slope * maxX + globalResults.boundary_intercept);
+      ctx.moveTo(toX(minX), popStart);
+      ctx.lineTo(toX(maxX), popEnd);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Recommended Operating Point Star & Guardbands
+      const recX = toX(globalResults.recommended_vdd);
+      const recY = toY(globalResults.recommended_freq);
+
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(recX, pad.top);
+      ctx.lineTo(recX, pad.top + plotH);
+      ctx.moveTo(pad.left, recY);
+      ctx.lineTo(pad.left + plotW, recY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Star shape
+      drawStar(ctx, recX, recY, 5, 9, 4.5, '#a855f7', '#ffffff');
+    }
+
+    function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, fill, stroke) {
+      let rot = Math.PI / 2 * 3;
+      let x = cx;
+      let y = cy;
+      const step = Math.PI / spikes;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // ── Interactive Hover Tooltip Event ───────────────────────────────────────
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      let closest = null;
+      let minDistance = 14; // hover radius
+
+      for (let i = 0; i < spatialPoints.length; i++) {
+        const p = spatialPoints[i];
+        const dist = Math.hypot(p.x - mouseX, p.y - mouseY);
+        if (dist < minDistance) {
+          closest = p;
+          minDistance = dist;
+        }
+      }
+
+      if (closest) {
+        document.getElementById('tt-device').textContent = closest.die || 'Device 1';
+        document.getElementById('tt-vdd').textContent = closest.vdd.toFixed(2) + ' V';
+        document.getElementById('tt-freq').textContent = closest.freq.toFixed(2) + ' GHz';
+
+        const resEl = document.getElementById('tt-result');
+        resEl.textContent = closest.result;
+        resEl.style.color = closest.result === 'PASS' ? '#22c55e' : '#ef4444';
+
+        document.getElementById('tt-code').textContent = closest.code;
+
+        tooltip.style.display = 'block';
+        tooltip.style.left = `${mouseX}px`;
+        tooltip.style.top = `${mouseY}px`;
+      } else {
+        tooltip.style.display = 'none';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+
+    // ── PDF Report Download Trigger ───────────────────────────────────────────
     document.getElementById('btn-report').addEventListener('click', async () => {
       if (!currentSessionId) return;
 

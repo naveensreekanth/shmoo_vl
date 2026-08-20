@@ -74,10 +74,28 @@ def upload():
             'web_plot_path': str(web_plot_path)
         }
 
+        # Serialize plot points for interactive browser chart with tooltips
+        die_col = 'Die_ID' if 'Die_ID' in df.columns else ('Test_ID' if 'Test_ID' in df.columns else None)
+        points_data = []
+        for _, row in df.iterrows():
+            points_data.append({
+                'vdd': round(float(row['VDD_V']), 4),
+                'freq': round(float(row['Frequency_GHz']), 4),
+                'result': str(row['Test_Result']),
+                'code': str(row['Failure_Code']),
+                'die': str(row[die_col]) if die_col else 'Device 1',
+                'pat': str(row.get('Pattern_ID', row.get('March_Algorithm', ''))) if ('Pattern_ID' in df.columns or 'March_Algorithm' in df.columns) else ''
+            })
+
         return jsonify({
             'session_id': session_id,
             'meta': meta,
             'results': _serialize_results(results),
+            'plot_data': {
+                'points': points_data,
+                'vdd_range': [float(df['VDD_V'].min()), float(df['VDD_V'].max())],
+                'freq_range': [float(df['Frequency_GHz'].min()), float(df['Frequency_GHz'].max())],
+            },
             'plot_url': f'/api/plot/{session_id}.png'
         })
 

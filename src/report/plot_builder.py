@@ -145,8 +145,9 @@ def build_shmoo_plot(
         spine.set_color(grid_color)
 
     legend = ax.legend(
-        loc='upper left', frameon=True,
-        facecolor=card_bg, edgecolor=grid_color, fontsize=8
+        bbox_to_anchor=(0.5, 1.02), loc='lower center',
+        ncol=min(4, max(2, len(ax.get_legend_handles_labels()[0]))),
+        frameon=True, facecolor=card_bg, edgecolor=grid_color, fontsize=8
     )
     for text in legend.get_texts():
         text.set_color(text_color)
