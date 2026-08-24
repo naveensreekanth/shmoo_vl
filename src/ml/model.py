@@ -64,6 +64,9 @@ class ShmooResults:
     die_rankings:             List[dict] = field(default_factory=list)
     high_performer:           Optional[dict] = None
     low_performer:            Optional[dict] = None
+    # Automated Shmoo plot classification & diagnostic attributes
+    shmoo_plot_type:          str = "Normal Shmoo"
+    shmoo_type_description:   str = ""
     # kept for plot overlay
     ransac: object = field(default=None, repr=False)
 
@@ -268,6 +271,8 @@ class ShmooModel:
         fail_codes = {str(k): int(v)
                       for k, v in df['Failure_Code'].value_counts().items()}
 
+        shmoo_plot_type, shmoo_type_description = self._classify_shmoo_type(df, boundary, fail_codes)
+
         self.results = ShmooResults(
             accuracy=float(acc),
             cv_accuracy=float(cv_scores.mean()),
@@ -294,6 +299,8 @@ class ShmooModel:
             die_rankings=die_rankings,
             high_performer=high_performer,
             low_performer=low_performer,
+            shmoo_plot_type=shmoo_plot_type,
+            shmoo_type_description=shmoo_type_description,
             ransac=self.ransac,
         )
         return self.results
@@ -346,3 +353,114 @@ class ShmooModel:
             'n_jobs':           -1,
             'random_state':     42,
         }
+
+    @staticmethod
+    def _classify_shmoo_type(df: pd.DataFrame, boundary: dict, fail_codes: dict) -> tuple:
+        """
+        Automatically classifies the Shmoo plot pattern and identifies the root cause
+        (e.g., Low-Voltage Wall vs High-Voltage Hold-Time Wall vs Reverse Speedpath vs Floor vs Finger vs Brick Wall vs Normal).
+        """
+        codes = set(fail_codes.keys())
+
+        # 1. Brick Wall Shmoo
+        if 'BRICK_WALL_INIT' in codes:
+            return (
+                "Brick Wall Shmoo (Bi-Stable Reset / Initialization Failure)",
+                "The plot exhibits characteristic vertical 'brick wall' failing stripes. "
+                "This occurs due to bi-stable initialization issues where uninitialized registers or flip-flops "
+                "power up randomly into 0 or 1 states without a proper reset pulse, causing intermittent failures "
+                "across frequencies regardless of supply voltage."
+            )
+
+        # 2. Wall Shmoo: Low VDD Wall vs High VDD Hold-Time Wall
+        if 'LOW_VDD_WALL' in codes or 'HOLD_TIME_WALL' in codes:
+            if 'LOW_VDD_WALL' in codes and 'HOLD_TIME_WALL' in codes:
+                return (
+                    "Double Wall Shmoo (Low Voltage Drive Cutoff & High Voltage Hold-Time Wall)",
+                    "The plot is bounded by dual vertical walls: (1) Low-Voltage Wall (circuit fails below minimum supply "
+                    "due to insufficient gate drive / IR drop), and (2) High-Voltage Wall (circuit fails at elevated VDD "
+                    "irrespective of frequency due to fast-path clock skew and hold-time race conditions)."
+                )
+            elif 'LOW_VDD_WALL' in codes:
+                return (
+                    "Wall Shmoo (Low-Voltage Gate Drive Cutoff / Voltage Failure)",
+                    "The plot exhibits a hard vertical failure wall at low supply voltages. "
+                    "This occurs due to voltage failure: below a critical VDD threshold, transistor gate drive is insufficient "
+                    "or IR drop collapses logic states, causing the circuit to fail across all operating frequencies."
+                )
+            else:
+                return (
+                    "Wall Shmoo (High-Voltage Hold-Time Race / Fast-Path Skew)",
+                    "The plot exhibits a hard vertical failure wall at high supply voltages. "
+                    "This occurs due to hold-time race conditions: elevated VDD causes circuits to run faster, resulting in "
+                    "clock skew and data latching at incorrect clock edges regardless of operating frequency."
+                )
+
+        # 3. Reverse Speedpath Shmoo
+        if 'REVERSE_SPEEDPATH_LEAKAGE' in codes:
+            return (
+                "Reverse Speedpath Shmoo (Dynamic Node Leakage at High VDD)",
+                "The plot exhibits an inverted pass/fail boundary where maximum operating frequency (Fmax) decreases "
+                "as supply voltage increases. This occurs because elevated VDD accentuates subthreshold and gate leakage "
+                "on weak dynamic nodes, causing charge loss and severe RC delay degradation before cycle evaluation."
+            )
+
+        # 4. Floor Shmoo
+        if 'FLOOR_LEAKAGE_FAIL' in codes:
+            return (
+                "Floor Shmoo (Low-Frequency Dynamic Node Discharge)",
+                "The plot exhibits a horizontal failing floor at low frequencies. "
+                "The circuit operates successfully at mid/high frequencies but fails at lower clock rates because "
+                "extended clock periods give unrefreshed dynamic nodes enough time to leak away their stored charge."
+            )
+
+        # 5. Finger Shmoo
+        if 'FINGER_RESONANCE_COUPLING' in codes:
+            return (
+                "Finger Shmoo (Aggressor-Victim Crosstalk Resonance)",
+                "The plot displays distinct failing 'comb fingers' (notches) protruding into the pass region. "
+                "This occurs due to inductive/capacitive crosstalk coupling where specific harmonic clock frequencies "
+                "and pattern alignments trigger resonance between aggressor and victim signal traces."
+            )
+
+        # 6. Marginality Shmoo
+        if 'MARGINALITY_IR_DROP' in codes:
+            return (
+                "Marginality & Hold Time Shmoo (Supply Rail Droop & Clock Skew)",
+                "The plot shows marginality failures at operating corners. "
+                "This occurs due to high-switching IR drop at supply rail limits combined with PLL setup clock skew sensitivity."
+            )
+
+        # ── Spatial Pattern Heuristics (if generic failure codes like FREQ_MARGIN / TIMING are used) ──
+        vdds = sorted(df['VDD_V'].unique())
+        freqs = sorted(df['Frequency_GHz'].unique())
+
+        # Check low voltage wall spatially
+        if len(vdds) >= 4:
+            low_v_val = vdds[min(2, len(vdds)-1)]
+            low_v_df = df[df['VDD_V'] <= low_v_val]
+            if len(low_v_df) and (low_v_df['label'] == 0).mean() > 0.90:
+                return (
+                    "Wall Shmoo (Low-Voltage Gate Drive Cutoff / Voltage Failure)",
+                    f"The plot exhibits a hard vertical wall at low supply voltages (VDD < {low_v_val:.2f} V). "
+                    "This is caused by voltage failure: below minimum gate drive, logic gates fail to switch properly regardless of frequency."
+                )
+
+        # Check floor shmoo spatially
+        if len(freqs) >= 4:
+            low_f_val = freqs[min(3, len(freqs)-1)]
+            low_f_df = df[df['Frequency_GHz'] <= low_f_val]
+            if len(low_f_df) and (low_f_df['label'] == 0).mean() > 0.85 and (df['label'] == 1).sum() > 0:
+                return (
+                    "Floor Shmoo (Low-Frequency Dynamic Node Discharge)",
+                    f"The plot displays a failing floor at lower clock frequencies (Frequency < {low_f_val:.2f} GHz). "
+                    "The circuit operates at higher frequencies but fails at low rates due to dynamic node leakage over long cycle times."
+                )
+
+        # Default: Normal Shmoo
+        return (
+            "Normal Shmoo (Well-Behaved Linear Speedpath)",
+            "The plot exhibits a standard, well-behaved linear pass/fail boundary. "
+            "Maximum operating frequency (Fmax) scales smoothly with supply voltage (VDD), indicating stable silicon "
+            "where failures are purely frequency/voltage-limited."
+        )

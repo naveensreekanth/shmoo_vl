@@ -92,7 +92,16 @@ class ReportGenerator:
             f"Figure 1 — Shmoo Plot. Linear boundary: Fmax(GHz) ≈ {results.boundary_slope:.3f} × VDD(V) "
             f"{'+' if results.boundary_intercept>=0 else ''}{results.boundary_intercept:.3f}", S['caption']
         ))
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 6))
+
+        # 3.1 Shmoo Plot Classification & Diagnostic Analysis
+        shmoo_type = getattr(results, 'shmoo_plot_type', 'Normal Shmoo')
+        shmoo_desc = getattr(results, 'shmoo_type_description', '')
+        if shmoo_type:
+            story.append(Paragraph('3.1 Automated Shmoo Classification & Diagnostic Analysis', S['h2']))
+            diag_text = f"<b>Identified Shmoo Pattern:</b> {shmoo_type}<br/><b>Diagnostic Analysis:</b> {shmoo_desc}"
+            story.append(Paragraph(diag_text, S['body']))
+            story.append(Spacer(1, 8))
 
         # 4. Numerical Analysis
         story.append(Paragraph('4. Numerical Metrics & Margin Analysis', S['h1']))

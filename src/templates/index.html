@@ -441,6 +441,7 @@
       <div style="margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
         <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Test Methodology:</span>
         <select id="methodology-select" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; outline: none; cursor: pointer; backdrop-filter: blur(8px);">
+          <option value="Scan Chain Testing">Scan Chain Testing</option>
           <option value="MBIST">MBIST (Memory Built-In Self-Test)</option>
           <option value="LBIST">LBIST (Logic Built-In Self-Test)</option>
           <option value="ATPG">ATPG (Automatic Test Pattern Generation)</option>
@@ -547,6 +548,15 @@
             <div class="tooltip-row"><span class="tooltip-label">Failure Code:</span><span class="tooltip-val" id="tt-code">--</span></div>
           </div>
         </div>
+
+        <!-- Shmoo Pattern Classification & Diagnostic Card -->
+        <div style="margin-top: 1rem; padding: 1rem; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--glass-border); border-radius: 10px;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Identified Shmoo Pattern:</span>
+            <span id="shmoo-type-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem;">Normal Shmoo</span>
+          </div>
+          <p id="shmoo-type-desc" style="font-size: 0.85rem; color: var(--text-main); line-height: 1.5;">--</p>
+        </div>
       </div>
 
       <div class="controls-bar">
@@ -647,6 +657,10 @@
       document.getElementById('m-fmargin').textContent = '+' + (r.freq_margin_ghz * 1000).toFixed(0) + ' MHz Margin';
       document.getElementById('m-r2').textContent = r.boundary_r2.toFixed(3);
       document.getElementById('m-slope').textContent = 'Slope: ' + r.boundary_slope.toFixed(2) + ' GHz/V';
+
+      // Update Shmoo Pattern Classification & Diagnostic Card
+      document.getElementById('shmoo-type-badge').textContent = r.shmoo_plot_type || 'Normal Shmoo';
+      document.getElementById('shmoo-type-desc').textContent = r.shmoo_type_description || '';
 
       // Setup Multi-Device section & filter options
       const multiCard = document.getElementById('multi-device-card');

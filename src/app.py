@@ -194,6 +194,8 @@ def _serialize_results(results) -> dict:
         'high_performer': getattr(results, 'high_performer', None),
         'low_performer': getattr(results, 'low_performer', None),
         'die_results': getattr(results, 'die_results', {}),
+        'shmoo_plot_type': getattr(results, 'shmoo_plot_type', 'Normal Shmoo'),
+        'shmoo_type_description': getattr(results, 'shmoo_type_description', ''),
     }
 
 
