@@ -3,6 +3,8 @@
 
 An automated Machine Learning system for semiconductor Shmoo plot characterization, automated Shmoo pattern classification, arbitrary multi-device ($1 \dots N$) performance ranking, Fmax pass/fail boundary extraction, guardband optimization, and executive PDF report generation.
 
+🚀 **Live Vercel Application**: [https://shmoo-vl.vercel.app/](https://shmoo-vl.vercel.app/)
+
 ---
 
 ## 🌟 Key Features
@@ -77,12 +79,10 @@ Open your browser and navigate to:
 
 ## 🌐 Production Cloud Deployment
 
-### Option 1: Deploy on Vercel (Recommended)
+### Option 1: Deploy on Vercel (Live)
 
-1. Go to **[Vercel.com](https://vercel.com)** and sign in with your GitHub account.
-2. Click **Add New Project** and import your repository: `https://github.com/naveensreekanth/shmoo_vl.git`.
-3. Vercel will automatically detect `vercel.json` and `@vercel/python`.
-4. Click **Deploy**! Your app will be deployed instantly with a live `.vercel.app` URL.
+- 🌐 **Live Web App**: [https://shmoo-vl.vercel.app/](https://shmoo-vl.vercel.app/)
+- **Deployment**: Automatic continuous deployment from the `main` branch via `@vercel/python` serverless runtime.
 
 ### Option 2: Deploy on Render / Railway
 
