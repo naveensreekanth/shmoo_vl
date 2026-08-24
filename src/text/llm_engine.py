@@ -66,7 +66,7 @@ class LLMEngine:
             verbose=False,
         )
 
-    def generate(self, results, meta) -> str:
+    def generate(self, results, meta, test_methodology='MBIST') -> str:
         self._load()
 
         fail_codes = results.failure_code_dist

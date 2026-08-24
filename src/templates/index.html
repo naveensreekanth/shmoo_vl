@@ -438,6 +438,14 @@
     <header>
       <h1>SHMOO ML Optimization System</h1>
       <p>Automated Local Boundary Prediction, Guardband Optimization & Executive PDF Reporting</p>
+      <div style="margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Test Methodology:</span>
+        <select id="methodology-select" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; outline: none; cursor: pointer; backdrop-filter: blur(8px);">
+          <option value="MBIST">MBIST (Memory Built-In Self-Test)</option>
+          <option value="LBIST">LBIST (Logic Built-In Self-Test)</option>
+          <option value="ATPG">ATPG (Automatic Test Pattern Generation)</option>
+        </select>
+      </div>
     </header>
 
     <div class="glass-card" id="upload-card">
@@ -1004,7 +1012,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             session_id: currentSessionId,
-            text_mode: mode
+            text_mode: mode,
+            test_methodology: document.getElementById('methodology-select').value
           })
         });
 

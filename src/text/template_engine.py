@@ -93,7 +93,7 @@ class TemplateEngine:
             return 'high_r2_good_margin_with_timing'
         return 'high_r2_good_margin_no_timing'
 
-    def generate(self, results, meta) -> str:
+    def generate(self, results, meta, test_methodology='MBIST') -> str:
         key      = self._select_template(results)
         template = self.TEMPLATES[key]
 
@@ -127,6 +127,32 @@ class TemplateEngine:
             timing_count=timing_count,
             timing_pct=timing_count / n_fail * 100 if n_fail else 0,
         )
+
+        # Dynamic terminology customization based on selected methodology
+        if test_methodology == 'ATPG':
+            narrative = (narrative
+                .replace("the device passed", f"the device under ATPG Scan passed")
+                .replace("anomalous failure clusters", "ATPG scan chain path delay clusters")
+                .replace("TIMING failures", "scan path timing delay failures")
+                .replace("TIMING-failing patterns", "ATPG critical-path timing patterns")
+                .replace("functional/hard defects", "scan timing/path delay defects")
+            )
+        elif test_methodology == 'LBIST':
+            narrative = (narrative
+                .replace("the device passed", f"the Logic BIST (LBIST) channel passed")
+                .replace("anomalous failure clusters", "LBIST channel transition delay clusters")
+                .replace("TIMING failures", "logic gate transition delay failures")
+                .replace("TIMING-failing patterns", "LBIST transition timing patterns")
+                .replace("functional/hard defects", "gate transition delay defects")
+            )
+        else: # MBIST
+            narrative = (narrative
+                .replace("the device passed", f"the Memory BIST (MBIST) array passed")
+                .replace("anomalous failure clusters", "MBIST memory array write/read clusters")
+                .replace("TIMING failures", "memory functional timing failures")
+                .replace("TIMING-failing patterns", "March algorithm timing patterns")
+                .replace("functional/hard defects", "memory array/cell defects")
+            )
 
         if getattr(results, 'is_multi_die', False) and getattr(results, 'high_performer', None):
             high = results.high_performer

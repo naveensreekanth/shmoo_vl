@@ -41,12 +41,12 @@ def _styles():
 
 
 class ReportGenerator:
-    def generate(self, results, meta, narrative, plot_path, output_path, results_by_die=None):
+    def generate(self, results, meta, narrative, plot_path, output_path, results_by_die=None, test_methodology='MBIST'):
         doc = SimpleDocTemplate(
             output_path, pagesize=A4,
             leftMargin=1.8*cm, rightMargin=1.8*cm,
             topMargin=2.0*cm, bottomMargin=2.0*cm,
-            title='SHMOO Analysis Report', author='Shmoo ML System'
+            title=f'{test_methodology} SHMOO Analysis Report', author='Shmoo ML System'
         )
 
         S = _styles()
@@ -54,8 +54,8 @@ class ReportGenerator:
         W = doc.width
 
         # Header
-        story.append(Paragraph('SHMOO Characterization & Analysis Report', S['title']))
-        story.append(Paragraph('<i>Die-Level VDD/Frequency Characterization — Binning & Screening Recommendation</i>', S['subtitle']))
+        story.append(Paragraph(f'{test_methodology} SHMOO Characterization & Analysis Report', S['title']))
+        story.append(Paragraph(f'<i>Die-Level VDD/Frequency Characterization — {test_methodology} Binning & Screening Recommendation</i>', S['subtitle']))
         
         # Metadata Bar
         meta_text = f"Source: {meta.get('lot_id', 'Lot_A001')}, Wafer {meta.get('wafer_id', 'W001')}, Devices: {meta.get('n_dies', 1)}  |  Prepared: {datetime.now().strftime('%B %d, %Y')}  |  Pass Rate: {meta.get('pass_rate', 0)*100:.1f}%"
@@ -230,13 +230,20 @@ class ReportGenerator:
         total_fails = results.n_fail or 1
         data = [['Failure Code', 'Count', '% of Fails', 'Description']]
         descs = {
-            'FREQ_MARGIN':          'Voltage/frequency-limited — above Fmax at given VDD',
-            'TIMING':                'Pattern-specific critical path fail (scan)',
-            'STUCK_AT':              'Memory cell stuck at fixed logic value — hard defect',
-            'COUPLING_FAULT':        'Adjacent-cell coupling fault — hard defect',
-            'RETENTION_FAULT':       'Cell fails to retain data — hard defect',
-            'ADDRESS_DECODE_FAULT':  'Address decoder fault — hard defect',
-            'NA':                    'Unclassified failure',
+            'FREQ_MARGIN':                'Voltage/frequency-limited — above Fmax at given VDD',
+            'TIMING':                      'Pattern-specific critical path fail (scan)',
+            'STUCK_AT':                    'Memory cell stuck at fixed logic value — hard defect',
+            'COUPLING_FAULT':              'Adjacent-cell coupling fault — hard defect',
+            'RETENTION_FAULT':             'Cell fails to retain data — hard defect',
+            'ADDRESS_DECODE_FAULT':        'Address decoder fault — hard defect',
+            'LOW_VDD_WALL':                'Wall Shmoo: Low voltage logic gate drive failure / IR drop',
+            'HOLD_TIME_WALL':              'Wall Shmoo: Fast-path hold time violation at high VDD',
+            'BRICK_WALL_INIT':             'Brick Wall Shmoo: Bi-stable uninitialized reset state failure',
+            'REVERSE_SPEEDPATH_LEAKAGE':   'Reverse Speedpath: Dynamic node leakage / RC delay at high VDD',
+            'FLOOR_LEAKAGE_FAIL':          'Floor Shmoo: Dynamic node charge loss at low frequencies',
+            'FINGER_RESONANCE_COUPLING':   'Finger Shmoo: Aggressor-victim crosstalk resonance notch',
+            'MARGINALITY_IR_DROP':         'Marginality Shmoo: Supply rail droop & clock skew sensitivity',
+            'NA':                          'Unclassified failure',
         }
         for code, count in sorted(dist.items(), key=lambda x: -x[1]):
             if code == 'NA' and count == 0: continue

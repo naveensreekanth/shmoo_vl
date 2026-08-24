@@ -124,6 +124,7 @@ def generate_report():
         data = request.json or {}
         session_id = data.get('session_id')
         text_mode = data.get('text_mode', 'template')  # 'llm' or 'template'
+        test_methodology = data.get('test_methodology', 'MBIST')  # 'MBIST', 'LBIST', or 'ATPG'
 
         session = sessions.get(session_id)
         if not session:
@@ -137,12 +138,12 @@ def generate_report():
         if text_mode == 'llm':
             engine = LLMEngine()
             if engine.is_available():
-                narrative = engine.generate(results, meta)
+                narrative = engine.generate(results, meta, test_methodology=test_methodology)
             else:
-                narrative = TemplateEngine().generate(results, meta) + "\n\n(Note: LLM weights were missing; output defaulted to template mode.)"
+                narrative = TemplateEngine().generate(results, meta, test_methodology=test_methodology) + "\n\n(Note: LLM weights were missing; output defaulted to template mode.)"
         else:
             engine = TemplateEngine()
-            narrative = engine.generate(results, meta)
+            narrative = engine.generate(results, meta, test_methodology=test_methodology)
 
         # Build plot image for PDF (light background for printing)
         plot_path = REPORT_DIR / f"{session_id}_plot.png"
@@ -156,13 +157,14 @@ def generate_report():
             meta=meta,
             narrative=narrative,
             plot_path=str(plot_path),
-            output_path=str(report_path)
+            output_path=str(report_path),
+            test_methodology=test_methodology
         )
 
         return send_file(
             str(report_path),
             as_attachment=True,
-            download_name=f"SHMOO_Analysis_Report_{meta.get('die_id','D0001')}.pdf",
+            download_name=f"{test_methodology}_SHMOO_Analysis_Report_{meta.get('die_id','D0001')}.pdf",
             mimetype='application/pdf'
         )
 

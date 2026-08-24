@@ -18,10 +18,17 @@ matplotlib.use('Agg')  # Headless backend
 import matplotlib.pyplot as plt
 
 COLOURS = {
-    'PASS':        '#2ecc71',  # Bright Green
-    'FREQ_MARGIN': '#e74c3c',  # Bright Red
-    'TIMING':      '#f39c12',  # Orange
-    'NA':          '#e74c3c',
+    'PASS':                        '#2ecc71',  # Bright Green
+    'FREQ_MARGIN':                 '#e74c3c',  # Bright Red
+    'TIMING':                      '#f39c12',  # Orange
+    'LOW_VDD_WALL':                '#d35400',  # Rust Orange
+    'HOLD_TIME_WALL':              '#c0392b',  # Crimson Red
+    'BRICK_WALL_INIT':             '#8e44ad',  # Purple
+    'REVERSE_SPEEDPATH_LEAKAGE':   '#e67e22',  # Amber Orange
+    'FLOOR_LEAKAGE_FAIL':          '#16a085',  # Teal Cyan
+    'FINGER_RESONANCE_COUPLING':   '#9b59b6',  # Amethyst
+    'MARGINALITY_IR_DROP':         '#e74c3c',  # Red
+    'NA':                          '#e74c3c',
 }
 
 
