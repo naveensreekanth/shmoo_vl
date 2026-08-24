@@ -77,14 +77,18 @@ Open your browser and navigate to:
 
 ## 🌐 Production Cloud Deployment
 
-### Option 1: Deploy on Render / Railway (Recommended)
+### Option 1: Deploy on Vercel (Recommended)
+
+1. Go to **[Vercel.com](https://vercel.com)** and sign in with your GitHub account.
+2. Click **Add New Project** and import your repository: `https://github.com/naveensreekanth/shmoo_vl.git`.
+3. Vercel will automatically detect `vercel.json` and `@vercel/python`.
+4. Click **Deploy**! Your app will be deployed instantly with a live `.vercel.app` URL.
+
+### Option 2: Deploy on Render / Railway
 
 1. Connect your GitHub repository (`https://github.com/naveensreekanth/shmoo_vl.git`) to **Render** or **Railway**.
-2. Select **Web Service**.
-3. Set the build and start commands:
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn --chdir src app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
-4. Deploy! Render/Railway automatically detects `Procfile` and serves the app online.
+2. Select **Web Service**. Render/Railway automatically detects `Procfile` and `requirements.txt`.
+3. Click **Deploy Web Service**!
 
 ### Option 2: Deploy with Docker
 

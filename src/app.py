@@ -19,14 +19,31 @@ from report.plot_builder import build_shmoo_plot
 from text.llm_engine import LLMEngine
 from text.template_engine import TemplateEngine
 
+import tempfile
+
 app = Flask(__name__)
 CORS(app)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = BASE_DIR / "uploads"
-REPORT_DIR = BASE_DIR / "reports"
-UPLOAD_DIR.mkdir(exist_ok=True)
-REPORT_DIR.mkdir(exist_ok=True)
+IS_VERCEL = os.environ.get('VERCEL') == '1' or 'VERCEL_REGION' in os.environ
+
+if IS_VERCEL:
+    tmp_base = Path(tempfile.gettempdir())
+    UPLOAD_DIR = tmp_base / "uploads"
+    REPORT_DIR = tmp_base / "reports"
+else:
+    UPLOAD_DIR = BASE_DIR / "uploads"
+    REPORT_DIR = BASE_DIR / "reports"
+
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    tmp_base = Path(tempfile.gettempdir())
+    UPLOAD_DIR = tmp_base / "uploads"
+    REPORT_DIR = tmp_base / "reports"
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 sessions = {}
 
