@@ -13,7 +13,7 @@ import joblib
 try:
     import lightgbm as lgb
     HAS_LIGHTGBM = True
-except ImportError:
+except (ImportError, OSError, Exception):
     HAS_LIGHTGBM = False
     from sklearn.ensemble import HistGradientBoostingClassifier
 

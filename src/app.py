@@ -7,10 +7,18 @@ and downloadable PDF report generation with text options (LLM vs Template).
 
 from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
-import os, json, uuid, traceback
+import sys, os, json, uuid, traceback
 import pandas as pd
 import numpy as np
 from pathlib import Path
+
+# Ensure src and root directories are in sys.path for Vercel serverless environment
+CURRENT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = CURRENT_DIR.parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from data.preprocessor import ShmooPreprocessor
 from ml.model import ShmooModel
@@ -21,10 +29,14 @@ from text.template_engine import TemplateEngine
 
 import tempfile
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=str(CURRENT_DIR / 'templates'),
+    static_folder=str(CURRENT_DIR / 'static')
+)
 CORS(app)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = ROOT_DIR
 IS_VERCEL = os.environ.get('VERCEL') == '1' or 'VERCEL_REGION' in os.environ
 
 if IS_VERCEL:
