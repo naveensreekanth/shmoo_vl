@@ -423,12 +423,31 @@ class ShmooModel:
                 "and pattern alignments trigger resonance between aggressor and victim signal traces."
             )
 
-        # 6. Marginality Shmoo
-        if 'MARGINALITY_IR_DROP' in codes:
+        # 6. Power & IR Drop Issue Shmoo
+        if 'POWER_IR_DROP_FAIL' in codes:
             return (
-                "Marginality & Hold Time Shmoo (Supply Rail Droop & Clock Skew)",
-                "The plot shows marginality failures at operating corners. "
-                "This occurs due to high-switching IR drop at supply rail limits combined with PLL setup clock skew sensitivity."
+                "Power & IR Drop Issue Shmoo (Supply Grid Rail Collapse)",
+                "The plot shows widespread high-frequency failures caused by high switching current power consumption. "
+                "As test frequency increases, dynamic switching power (P = C * V^2 * f) causes internal IR drop on the supply grid, "
+                "collapsing internal VDD below nominal requirements and causing timing failure."
+            )
+
+        # 7. Hold Time Race Issue Shmoo
+        if 'HOLD_TIME_VIOLATION' in codes:
+            return (
+                "Hold Time Race Issue Shmoo (Fast-Path Clock Skew Violation)",
+                "The plot exhibits failures at high supply voltages (VDD > 1.05V) irrespective of operating frequency. "
+                "Elevated supply voltage accelerates combinational logic propagation speed, causing data signals to race ahead "
+                "of the capture clock edge and fail hold-time timing constraints."
+            )
+
+        # 8. Marginality Issue Shmoo
+        if 'MARGINALITY_VDDL_FAIL' in codes or 'MARGINALITY_VDDH_FAIL' in codes or 'MARGINALITY_IR_DROP' in codes:
+            return (
+                "Marginality Issue Shmoo (VDDL / VDDH Voltage Rail Corner Failure)",
+                "The plot shows failure clusters concentrated at extreme voltage corners (VDDL low-rail and VDDH high-rail). "
+                "This occurs due to circuit marginality: low VDD fails setup timing under reduced drive, while high VDD fails "
+                "under PLL jitter and rail droop."
             )
 
         # ── Spatial Pattern Heuristics (if generic failure codes like FREQ_MARGIN / TIMING are used) ──

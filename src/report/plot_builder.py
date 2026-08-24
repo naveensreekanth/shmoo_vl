@@ -28,6 +28,10 @@ COLOURS = {
     'FLOOR_LEAKAGE_FAIL':          '#16a085',  # Teal Cyan
     'FINGER_RESONANCE_COUPLING':   '#9b59b6',  # Amethyst
     'MARGINALITY_IR_DROP':         '#e74c3c',  # Red
+    'POWER_IR_DROP_FAIL':          '#d35400',  # Burnt Orange
+    'HOLD_TIME_VIOLATION':        '#c0392b',  # Crimson
+    'MARGINALITY_VDDL_FAIL':       '#f39c12',  # Amber
+    'MARGINALITY_VDDH_FAIL':       '#8e44ad',  # Purple
     'NA':                          '#e74c3c',
 }
 

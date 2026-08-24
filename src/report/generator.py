@@ -245,13 +245,11 @@ class ReportGenerator:
             'COUPLING_FAULT':              'Adjacent-cell coupling fault — hard defect',
             'RETENTION_FAULT':             'Cell fails to retain data — hard defect',
             'ADDRESS_DECODE_FAULT':        'Address decoder fault — hard defect',
-            'LOW_VDD_WALL':                'Wall Shmoo: Low voltage logic gate drive failure / IR drop',
-            'HOLD_TIME_WALL':              'Wall Shmoo: Fast-path hold time violation at high VDD',
-            'BRICK_WALL_INIT':             'Brick Wall Shmoo: Bi-stable uninitialized reset state failure',
-            'REVERSE_SPEEDPATH_LEAKAGE':   'Reverse Speedpath: Dynamic node leakage / RC delay at high VDD',
-            'FLOOR_LEAKAGE_FAIL':          'Floor Shmoo: Dynamic node charge loss at low frequencies',
-            'FINGER_RESONANCE_COUPLING':   'Finger Shmoo: Aggressor-victim crosstalk resonance notch',
             'MARGINALITY_IR_DROP':         'Marginality Shmoo: Supply rail droop & clock skew sensitivity',
+            'POWER_IR_DROP_FAIL':          'Power Issue: Excessive dynamic switching current & IR drop on supply rail',
+            'HOLD_TIME_VIOLATION':        'Hold Time Issue: Fast-path logic race condition & clock skew at high VDD',
+            'MARGINALITY_VDDL_FAIL':       'Marginality Issue: Low voltage rail (VDDL) setup timing failure',
+            'MARGINALITY_VDDH_FAIL':       'Marginality Issue: High voltage rail (VDDH) PLL jitter/droop failure',
             'NA':                          'Unclassified failure',
         }
         for code, count in sorted(dist.items(), key=lambda x: -x[1]):
