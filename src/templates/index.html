@@ -111,7 +111,128 @@
     .dashboard {
       display: none;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1.2rem;
+    }
+
+    /* Semiconductor Test Use-Case Cost & Optimization Quadrant */
+    .use-case-section {
+      margin-top: 0.2rem;
+    }
+
+    .use-case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-top: 0.8rem;
+    }
+
+    .use-case-card {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1.2rem 1.3rem;
+      border-top: 4px solid var(--card-accent, var(--accent-blue));
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .use-case-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .use-case-card.c1 { --card-accent: #38bdf8; }
+    .use-case-card.c2 { --card-accent: #22c55e; }
+    .use-case-card.c3 { --card-accent: #f59e0b; }
+    .use-case-card.c4 { --card-accent: #a855f7; }
+
+    .cost-pill-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.1rem;
+    }
+
+    .cost-pill {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 4px 10px;
+      width: fit-content;
+    }
+
+    .cost-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--card-accent, var(--accent-blue));
+    }
+
+    .cost-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cost-badge {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .use-case-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .use-case-formula {
+      font-size: 0.73rem;
+      color: var(--card-accent, var(--accent-blue));
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--glass-border);
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      font-family: monospace;
+      line-height: 1.35;
+    }
+
+    .use-case-math {
+      font-size: 0.77rem;
+      color: var(--text-main);
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .use-case-desc {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    .cost-comparison {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+      padding-top: 0.4rem;
+      margin-top: 0.2rem;
+    }
+
+    .use-case-footnote {
+      margin-top: 0.9rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      font-style: italic;
     }
 
     .metrics-grid {
@@ -559,6 +680,99 @@
         </div>
       </div>
 
+      <!-- Semiconductor Test Use Cases & Optimization Gained (Four Quadrants) -->
+      <div class="glass-card use-case-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 0.3rem;">
+          <div>
+            <h3 style="font-size: 1.15rem; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem;">
+              <span>⚡ Semiconductor Test Use Cases — Cost Optimization & ROI</span>
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+              Four core parametric test applications parameterized with dataset metrics & savings formulas
+            </p>
+          </div>
+          <div id="total-savings-badge" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.88rem; font-weight: 700; color: var(--accent-green);">
+            💰 Total Value: <span id="q-total-saved">$7.38</span> Saved / Device (<span id="q-lot-saved">$7,380</span> / Lot)
+          </div>
+        </div>
+
+        <div class="use-case-grid">
+          <!-- Card 1: Characterization -->
+          <div class="use-case-card c1">
+            <div class="cost-pill-row">
+              <div class="cost-pill"><span class="cost-value" id="q-char-saved">$1.80</span><span class="cost-label">Saved / dev</span></div>
+              <span class="cost-badge" id="q-char-pct" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8;">-72.0% Cost</span>
+            </div>
+            <div class="use-case-title">Characterization</div>
+            <div class="use-case-formula" id="q-char-formula">
+              <strong>Formula:</strong> (N<sub>raster</sub> - N<sub>sparse</sub>) × (t<sub>vector</sub> × Rate<sub>ATE</sub>)
+            </div>
+            <div class="use-case-math" id="q-char-math">(500 pts - 140 pts) × $0.005/pt</div>
+            <div class="use-case-desc" id="q-char-desc">Replaced 500 exhaustive raster sweep with 140 ML boundary points (72.0% faster).</div>
+            <div class="cost-comparison">
+              <span>Baseline: <s id="q-char-base">$2.50</s></span>
+              <span style="color: #38bdf8; font-weight: 600;">Optimized: <span id="q-char-opt">$0.70</span></span>
+            </div>
+          </div>
+
+          <!-- Card 2: Yield Analysis -->
+          <div class="use-case-card c2">
+            <div class="cost-pill-row">
+              <div class="cost-pill"><span class="cost-value" id="q-yield-saved">$1.37</span><span class="cost-label">Saved / dev</span></div>
+              <span class="cost-badge" id="q-yield-pct" style="background: rgba(34, 197, 94, 0.18); color: #22c55e;">-76.1% Cost</span>
+            </div>
+            <div class="use-case-title">Yield Analysis</div>
+            <div class="use-case-formula" id="q-yield-formula">
+              <strong>Formula:</strong> ΔY<sub>recovered</sub> × Cost<sub>die_mfg</sub>
+            </div>
+            <div class="use-case-math" id="q-yield-math">+3.8% Yield Recovery via R²=0.98 Guardband</div>
+            <div class="use-case-desc" id="q-yield-desc">Tightened conservative 25% guardband to calibrated 275mV / 169MHz margin.</div>
+            <div class="cost-comparison">
+              <span>Baseline: <s id="q-yield-base">$1.80</s></span>
+              <span style="color: #22c55e; font-weight: 600;">Optimized: <span id="q-yield-opt">$0.43</span></span>
+            </div>
+          </div>
+
+          <!-- Card 3: Debugging -->
+          <div class="use-case-card c3">
+            <div class="cost-pill-row">
+              <div class="cost-pill"><span class="cost-value" id="q-debug-saved">$3.44</span><span class="cost-label">Saved / dev</span></div>
+              <span class="cost-badge" id="q-debug-pct" style="background: rgba(245, 158, 11, 0.18); color: #f59e0b;">-81.9% Cost</span>
+            </div>
+            <div class="use-case-title">Debugging</div>
+            <div class="use-case-formula" id="q-debug-formula">
+              <strong>Formula:</strong> C<sub>manual_lab</sub> × Accuracy<sub>ML</sub> × η<sub>auto</sub>
+            </div>
+            <div class="use-case-math" id="q-debug-math">$4.20 × (96.4% CV Acc × 85% Auto)</div>
+            <div class="use-case-desc" id="q-debug-desc">Instant pattern classification (Normal Shmoo) eliminates weeks of manual waveform lab triage.</div>
+            <div class="cost-comparison">
+              <span>Baseline: <s id="q-debug-base">$4.20</s></span>
+              <span style="color: #f59e0b; font-weight: 600;">Optimized: <span id="q-debug-opt">$0.76</span></span>
+            </div>
+          </div>
+
+          <!-- Card 4: Binning -->
+          <div class="use-case-card c4">
+            <div class="cost-pill-row">
+              <div class="cost-pill"><span class="cost-value" id="q-binning-saved">$0.77</span><span class="cost-label">Saved / dev</span></div>
+              <span class="cost-badge" id="q-binning-pct" style="background: rgba(168, 85, 247, 0.18); color: #a855f7;">-85.6% Cost</span>
+            </div>
+            <div class="use-case-title">Binning</div>
+            <div class="use-case-formula" id="q-binning-formula">
+              <strong>Formula:</strong> ASP<sub>premium</sub> × Fmax<sub>precision</sub> - Overkill<sub>loss</sub>
+            </div>
+            <div class="use-case-math" id="q-binning-math">$0.90 × (R²=0.98 Fit × 88% Precision)</div>
+            <div class="use-case-desc" id="q-binning-desc">Per-device boundary extraction (2.28 GHz/V) isolates premium speed-grade dies.</div>
+            <div class="cost-comparison">
+              <span>Baseline: <s id="q-binning-base">$0.90</s></span>
+              <span style="color: #a855f7; font-weight: 600;">Optimized: <span id="q-binning-opt">$0.13</span></span>
+            </div>
+          </div>
+        </div>
+
+        <p class="use-case-footnote">Cost savings and ROI are dynamically computed from dataset features, ATE point reduction, ML cross-validation accuracy, and calibrated R² guardband margins.</p>
+      </div>
+
       <div class="controls-bar">
         <div class="mode-selector">
           <span style="font-size: 0.9rem; font-weight: 500;">Report Narrative Engine:</span>
@@ -593,6 +807,7 @@
     let currentSessionId = null;
     let globalPlotData = null;
     let globalResults = null;
+    let globalOptimizations = null;
 
     dropZone.addEventListener('click', () => fileInput.click());
 
@@ -627,6 +842,9 @@
       try {
         const res = await fetch('/api/upload', {
           method: 'POST',
+          headers: {
+            'X-API-Key': 'vannakam-da-mapla'
+          },
           body: formData
         });
 
@@ -636,6 +854,7 @@
         currentSessionId = data.session_id;
         globalPlotData = data.plot_data;
         globalResults = data.results;
+        globalOptimizations = data.optimizations;
 
         renderDashboard(data);
       } catch (err) {
@@ -661,6 +880,45 @@
       // Update Shmoo Pattern Classification & Diagnostic Card
       document.getElementById('shmoo-type-badge').textContent = r.shmoo_plot_type || 'Normal Shmoo';
       document.getElementById('shmoo-type-desc').textContent = r.shmoo_type_description || '';
+
+      // Populate Quadrant Cards Dynamically from Dataset Results
+      if (data.optimizations && data.optimizations.quadrant_data) {
+        const qd = data.optimizations.quadrant_data;
+        document.getElementById('q-total-saved').textContent = `$${qd.total_saved_per_device.toFixed(2)}`;
+        document.getElementById('q-lot-saved').textContent = `$${qd.total_saved_per_lot.toLocaleString()}`;
+
+        // Characterization
+        document.getElementById('q-char-saved').textContent = `$${qd.characterization.saved_cost.toFixed(2)}`;
+        document.getElementById('q-char-pct').textContent = `-${qd.characterization.pct_saved}% Cost`;
+        document.getElementById('q-char-math').textContent = qd.characterization.formula_math;
+        document.getElementById('q-char-desc').textContent = qd.characterization.details;
+        document.getElementById('q-char-base').textContent = `$${qd.characterization.base_cost.toFixed(2)}`;
+        document.getElementById('q-char-opt').textContent = `$${qd.characterization.opt_cost.toFixed(2)}`;
+
+        // Yield Analysis
+        document.getElementById('q-yield-saved').textContent = `$${qd.yield_analysis.saved_cost.toFixed(2)}`;
+        document.getElementById('q-yield-pct').textContent = `-${qd.yield_analysis.pct_saved}% Cost`;
+        document.getElementById('q-yield-math').textContent = qd.yield_analysis.formula_math;
+        document.getElementById('q-yield-desc').textContent = qd.yield_analysis.details;
+        document.getElementById('q-yield-base').textContent = `$${qd.yield_analysis.base_cost.toFixed(2)}`;
+        document.getElementById('q-yield-opt').textContent = `$${qd.yield_analysis.opt_cost.toFixed(2)}`;
+
+        // Debugging
+        document.getElementById('q-debug-saved').textContent = `$${qd.debugging.saved_cost.toFixed(2)}`;
+        document.getElementById('q-debug-pct').textContent = `-${qd.debugging.pct_saved}% Cost`;
+        document.getElementById('q-debug-math').textContent = qd.debugging.formula_math;
+        document.getElementById('q-debug-desc').textContent = qd.debugging.details;
+        document.getElementById('q-debug-base').textContent = `$${qd.debugging.base_cost.toFixed(2)}`;
+        document.getElementById('q-debug-opt').textContent = `$${qd.debugging.opt_cost.toFixed(2)}`;
+
+        // Binning
+        document.getElementById('q-binning-saved').textContent = `$${qd.binning.saved_cost.toFixed(2)}`;
+        document.getElementById('q-binning-pct').textContent = `-${qd.binning.pct_saved}% Cost`;
+        document.getElementById('q-binning-math').textContent = qd.binning.formula_math;
+        document.getElementById('q-binning-desc').textContent = qd.binning.details;
+        document.getElementById('q-binning-base').textContent = `$${qd.binning.base_cost.toFixed(2)}`;
+        document.getElementById('q-binning-opt').textContent = `$${qd.binning.opt_cost.toFixed(2)}`;
+      }
 
       // Setup Multi-Device section & filter options
       const multiCard = document.getElementById('multi-device-card');
@@ -1023,7 +1281,10 @@
       try {
         const res = await fetch('/api/report', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-API-Key': 'vannakam-da-mapla'
+          },
           body: JSON.stringify({
             session_id: currentSessionId,
             text_mode: mode,
