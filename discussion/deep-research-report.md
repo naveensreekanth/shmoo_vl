@@ -67,7 +67,7 @@ ML-augmented shmoo plots can cut test costs through multiple avenues:
 
 **Quantitative example:** Assume 1000 chips per wafer, tester cost ~$0.05 per chip-second. Baseline: full VDD/freq shmoo takes 100 ms per chip ($5.00/chip, $5000/wafer).  An ML model reduces shmoo to 80 ms (20% faster), saving $1.00 per chip, i.e. $1000 per wafer.  If burn-in costs $2/chip, and ML skips 20% of chips, that saves $0.40 per chip ($400/wafer).  Combined, ~$1400/wafer is saved (~28%).  These numbers scale with assumed ATE rates and skip fractions, but clearly illustrate substantial savings.  
 
- *Figure 2:* Example cost-reduction scenarios. If ML-based screening allows skipping 20–50% of burn-in (as PDF Solutions suggests) and reduces active test vectors by ~20%, total per-wafer test cost drops on the order of 10–30%. (Actual savings depend on tester throughput and cost assumptions.)  
+ *Figure 2:* Example cost-reduction scenarios. If ML-based screening allows skipping 20–50% of burn-in (as PDF Solutions suggests) and reduces active test vectors by ~20%, total per-wafer test cost drops on the order of 10–30%. (Actual savings depend on tester throughput and cost assumptions.)
 
 | **Test Scenario**         | **Baseline (Example)**            | **ML Improvement**        | **Savings (per 1000-chip wafer)**                |
 |---------------------------|----------------------------------|---------------------------|-------------------------------------------------|
@@ -147,7 +147,7 @@ While ML can greatly reduce test effort, it has pitfalls:
 
 - **Siloed data & infrastructure needs:** Effective ML requires data flow across teams and tools. Ensure die-level IDs link test logs from wafer-sort through final test. Build infrastructure (databases, real-time messaging, containerized analysis) so models can access up-to-date data and push decisions back to the tester.
 
-**Best practices:**  Start small and iterative. Begin by using ML to analyze and summarize shmoo data (shadow analysis) without changing the test program. Gradually enable ML-driven skipping in low-risk test segments (e.g. non-safety-critical retests). Always track key metrics (false reject/pass rates, ROC AUC) and have alarms if they degrade. Use cross-validation across wafers to ensure generality. Finally, pair ML with domain knowledge: e.g. if ML suggests a pass at extremely low VDD, a design engineer’s sanity check might flag it as suspicious.  
+**Best practices:**  Start small and iterative. Begin by using ML to analyze and summarize shmoo data (shadow analysis) without changing the test program. Gradually enable ML-driven skipping in low-risk test segments (e.g. non-safety-critical retests). Always track key metrics (false reject/pass rates, ROC AUC) and have alarms if they degrade. Use cross-validation across wafers to ensure generality. Finally, pair ML with domain knowledge: e.g. if ML suggests a pass at extremely low VDD, a design engineer’s sanity check might flag it as suspicious.
 
 ## 7. Recommendations
 
@@ -168,4 +168,3 @@ For a chip-test organization considering ML-based shmoo generation, we advise:
 By following a structured roadmap and continuously validating the ML models, a test organization can safely exploit shmoo plots with ML to boost throughput and yield.  Adopting these data-driven methods – as leading research suggests – is essential for keeping test costs in check as devices grow more complex.
 
 **Sources:** Scholarly and industry sources have informed this report, including IEEE and vendor whitepapers on shmoo testing, and recent ML-for-test literature. All assumptions and calculations (e.g. cost examples) are stated explicitly or sourced from industry practice.
-
